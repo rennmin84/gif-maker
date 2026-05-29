@@ -1,5 +1,7 @@
 # 🎬 GIF Maker
 
+**▶ Live demo: https://rennmin84.github.io/gif-maker/**
+
 A simple, privacy-friendly **video-to-GIF converter** that runs entirely in the
 browser using [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm).
 No server, no uploads — your video never leaves your device.
