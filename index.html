@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIF Maker — Video to GIF Converter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  :root{
+    --accent:#E63E25;
+    --accent-dim:#c5331d;
+    --ink:#1a1614;
+    --paper:#f4f1ea;
+    --paper-2:#ece7dc;
+    --card:#fffdf8;
+    --line:#ddd6c8;
+    --muted:#8a8174;
+    --good:#1f8f5f;
+    --shadow:0 1px 0 rgba(0,0,0,.04),0 12px 32px -16px rgba(26,22,20,.28);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Sora',system-ui,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(230,62,37,.06), transparent 60%),
+      radial-gradient(900px 500px at -5% 110%, rgba(230,62,37,.05), transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 20px 80px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:760px;margin:0 auto}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .logo{
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(140deg,var(--accent),var(--accent-dim));
+    display:grid;place-items:center;flex-shrink:0;
+    box-shadow:0 8px 18px -8px var(--accent);
+  }
+  .logo svg{width:24px;height:24px;fill:#fff}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.02em}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--muted);font-size:14px;margin:4px 0 28px 56px}
+
+  /* ---------- stepper ---------- */
+  .steps{display:flex;gap:8px;margin-bottom:24px}
+  .step-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .step{
+    width:100%;height:5px;border-radius:99px;background:var(--paper-2);
+    overflow:hidden;position:relative;
+  }
+  .step.done{background:var(--accent)}
+  .step.active::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(90deg,var(--accent),transparent);
+    animation:slide 1.4s ease-in-out infinite;
+  }
+  @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  .step-label{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.03em;text-align:center;transition:.2s ease}
+  .step-wrap.active .step-label{color:var(--accent)}
+  .step-wrap.done .step-label{color:var(--ink)}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:18px;padding:24px;box-shadow:var(--shadow);
+    margin-bottom:18px;
+  }
+  .card.hidden{display:none}
+  .card-title{
+    font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;
+  }
+  .card-title .num{
+    width:20px;height:20px;border-radius:6px;background:var(--accent);color:#fff;
+    font-size:12px;display:grid;place-items:center;font-weight:700;
+  }
+
+  /* ---------- dropzone ---------- */
+  .drop{
+    border:2px dashed var(--line);border-radius:16px;
+    padding:48px 24px;text-align:center;cursor:pointer;
+    transition:.18s ease;background:var(--paper);
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);background:#fff;transform:translateY(-1px)}
+  .drop .ic{font-size:40px;margin-bottom:12px;line-height:1}
+  .drop h3{font-size:18px;font-weight:700;margin-bottom:6px}
+  .drop p{color:var(--muted);font-size:14px}
+  .drop .btn{margin-top:18px;display:inline-block}
+  .hint{margin-top:14px;font-size:12px;color:var(--muted)}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    appearance:none;border:none;cursor:pointer;font-family:inherit;
+    background:var(--accent);color:#fff;font-weight:700;font-size:15px;
+    padding:13px 26px;border-radius:11px;transition:.16s ease;
+    box-shadow:0 8px 18px -10px var(--accent);
+  }
+  .btn:hover{background:var(--accent-dim);transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn.ghost{background:transparent;color:var(--accent);box-shadow:none;border:1.5px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--accent);background:#fff}
+  .btn.big{width:100%;padding:16px;font-size:16px}
+
+  /* ---------- preview + meta ---------- */
+  .preview-row{display:flex;gap:20px;align-items:flex-start}
+  @media(max-width:560px){.preview-row{flex-direction:column}}
+  .frame{
+    border-radius:12px;overflow:hidden;background:#000;
+    width:240px;flex-shrink:0;border:1px solid var(--line);
+    aspect-ratio:16/10;display:grid;place-items:center;
+  }
+  .frame img,.frame video{width:100%;height:100%;object-fit:contain;display:block}
+  .meta{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .meta .name{font-weight:700;font-size:15px;word-break:break-all}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    background:var(--paper-2);border-radius:8px;padding:7px 12px;
+    font-size:13px;font-family:'DM Mono',monospace;color:var(--ink);
+    display:flex;gap:6px;align-items:center;
+  }
+  .chip b{color:var(--muted);font-weight:500}
+
+  /* ---------- settings ---------- */
+  .field{margin-bottom:22px}
+  .field:last-child{margin-bottom:0}
+  .field > label{display:block;font-weight:700;font-size:15px;margin-bottom:4px}
+  .field .desc{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .opts{display:flex;gap:10px;flex-wrap:wrap}
+  .opt{
+    flex:1;min-width:84px;border:1.5px solid var(--line);border-radius:11px;
+    padding:13px 10px;text-align:center;cursor:pointer;transition:.15s ease;
+    background:var(--paper);
+  }
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(230,62,37,.1)}
+  .opt .big-t{font-weight:700;font-size:16px}
+  .opt .small-t{font-size:11px;color:var(--muted);margin-top:2px}
+
+  /* ---------- progress ---------- */
+  .progress-card{text-align:center;padding:36px 24px}
+  .spinner-label{font-weight:700;font-size:17px;margin-bottom:6px}
+  .spinner-sub{color:var(--muted);font-size:13px;margin-bottom:22px;font-family:'DM Mono',monospace}
+  .bar{height:12px;border-radius:99px;background:var(--paper-2);overflow:hidden}
+  .bar > i{
+    display:block;height:100%;width:0%;border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),#ff6a52);
+    transition:width .25s ease;
+  }
+  .pct{margin-top:10px;font-size:28px;font-weight:800;font-family:'DM Mono',monospace}
+
+  /* ---------- result ---------- */
+  .result-gif{
+    border-radius:14px;overflow:hidden;border:1px solid var(--line);
+    background:repeating-conic-gradient(#e8e3d8 0% 25%,#f4f1ea 0% 50%) 50%/20px 20px;
+    display:grid;place-items:center;margin-bottom:18px;
+  }
+  .result-gif img{max-width:100%;max-height:360px;display:block}
+  .compare{display:flex;gap:12px;margin-bottom:20px}
+  @media(max-width:560px){.compare{flex-direction:column}}
+  .compare .box{
+    flex:1;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--paper)
+  }
+  .compare .box .tag{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+  .compare .box .v{font-size:20px;font-weight:800;font-family:'DM Mono',monospace;margin-top:4px}
+  .compare .box .d{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px}
+  .compare .arrow{display:grid;place-items:center;color:var(--accent);font-size:24px;font-weight:800}
+  @media(max-width:560px){.compare .arrow{transform:rotate(90deg)}}
+  .savings{
+    text-align:center;font-weight:700;color:var(--good);font-size:14px;margin-bottom:18px;
+  }
+  .btn-row{display:flex;gap:12px}
+  @media(max-width:560px){.btn-row{flex-direction:column}}
+
+  /* ---------- toast / error ---------- */
+  .err{
+    background:#fdecea;border:1px solid #f5b8af;color:#b3271a;
+    padding:13px 16px;border-radius:11px;font-size:14px;margin-bottom:18px;
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .err.hidden{display:none}
+
+  /* footer 移出 .wrap，用負邊距抵銷 body 左右 padding(20px)，讓上方橫線貫穿整個頁面寬度 */
+  footer{text-align:center;color:var(--muted);font-size:12px;margin:48px -20px 0;padding:24px 20px 0;border-top:1px solid var(--line);line-height:1.9}
+  footer code{font-family:'DM Mono',monospace;background:var(--paper-2);padding:2px 6px;border-radius:5px}
+  footer .footer-name{font-weight:700;color:var(--ink);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm5 5v6l5-3-5-3z"/></svg>
+    </div>
+    <h1>GIF <span>Maker</span></h1>
+  </header>
+  <p class="sub">Convert any video into a GIF — right in your browser. Nothing gets uploaded.</p>
+
+  <div class="steps">
+    <div class="step-wrap" id="sw1"><div class="step" id="s1"></div><div class="step-label">Upload</div></div>
+    <div class="step-wrap" id="sw2"><div class="step" id="s2"></div><div class="step-label">Configure</div></div>
+    <div class="step-wrap" id="sw3"><div class="step" id="s3"></div><div class="step-label">Converting</div></div>
+    <div class="step-wrap" id="sw4"><div class="step" id="s4"></div><div class="step-label">Result</div></div>
+  </div>
+
+  <div class="err hidden" id="err"><span>⚠️</span><span id="errMsg"></span></div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="card" id="card-upload">
+    <div class="card-title"><span class="num">1</span> Choose your video</div>
+    <div class="drop" id="drop">
+      <div class="ic">🎬</div>
+      <h3>Drag &amp; drop a video here</h3>
+      <p>or click to browse your files</p>
+      <span class="btn">Select Video</span>
+      <div class="hint">MP4, MOV, WebM, AVI… · max 200 MB</div>
+    </div>
+    <input type="file" id="file" accept="video/*" hidden>
+  </div>
+
+  <!-- STEP 2: SOURCE INFO + SETTINGS -->
+  <div class="card hidden" id="card-source">
+    <div class="card-title"><span class="num">2</span> Your video</div>
+    <div class="preview-row">
+      <div class="frame" id="srcFrame"></div>
+      <div class="meta">
+        <div class="name" id="srcName">—</div>
+        <div class="chips">
+          <div class="chip"><b>Size</b><span id="srcSize">—</span></div>
+          <div class="chip"><b>Dimensions</b><span id="srcDim">—</span></div>
+          <div class="chip"><b>Duration</b><span id="srcDur">—</span></div>
+        </div>
+        <button class="btn ghost" id="changeBtn" style="align-self:flex-start;margin-top:4px">Change video</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="card-settings">
+    <div class="card-title"><span class="num">3</span> Output settings</div>
+
+    <div class="field">
+      <label>Frame rate</label>
+      <div class="desc">Higher FPS = smoother animation, but larger file size.</div>
+      <div class="opts" id="fpsOpts">
+        <div class="opt" data-fps="8"><div class="big-t">8</div><div class="small-t">fps · smallest</div></div>
+        <div class="opt sel" data-fps="12"><div class="big-t">12</div><div class="small-t">fps · balanced</div></div>
+        <div class="opt" data-fps="15"><div class="big-t">15</div><div class="small-t">fps · smooth</div></div>
+        <div class="opt" data-fps="24"><div class="big-t">24</div><div class="small-t">fps · smoothest</div></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Speed</label>
+      <div class="desc">Speeds up the GIF and shortens its duration (2× = half the time).</div>
+      <div class="opts" id="speedOpts">
+        <div class="opt sel" data-speed="1"><div class="big-t">1×</div><div class="small-t">normal</div></div>
+        <div class="opt" data-speed="2"><div class="big-t">2×</div><div class="small-t">half time</div></div>
+        <div class="opt" data-speed="4"><div class="big-t">4×</div><div class="small-t">quarter time</div></div>
+        <div class="opt" data-speed="6"><div class="big-t">6×</div><div class="small-t">1/6 time</div></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Size</label>
+      <div class="desc">Smaller size = smaller file. Aspect ratio is always preserved.</div>
+      <div class="opts" id="sizeOpts">
+        <div class="opt" data-w="320"><div class="big-t">320p</div><div class="small-t">tiny</div></div>
+        <div class="opt sel" data-w="480"><div class="big-t">480p</div><div class="small-t">small</div></div>
+        <div class="opt" data-w="640"><div class="big-t">640p</div><div class="small-t">medium</div></div>
+        <div class="opt" data-w="0"><div class="big-t">Original</div><div class="small-t">full size</div></div>
+      </div>
+    </div>
+
+    <button class="btn big" id="convertBtn" style="margin-top:8px">Convert to GIF →</button>
+  </div>
+
+  <!-- STEP: PROGRESS -->
+  <div class="card progress-card hidden" id="card-progress">
+    <div class="spinner-label" id="progLabel">Converting…</div>
+    <div class="spinner-sub" id="progSub">Longer videos take more time — hang tight.</div>
+    <div class="bar"><i id="progBar"></i></div>
+    <div class="pct" id="progPct">0%</div>
+  </div>
+
+  <!-- STEP 4: RESULT -->
+  <div class="card hidden" id="card-result">
+    <div class="card-title"><span class="num">4</span> Your GIF is ready</div>
+    <div class="result-gif" id="resultGif"></div>
+
+    <div class="compare">
+      <div class="box">
+        <div class="tag">Before · Video</div>
+        <div class="v" id="cmpBeforeSize">—</div>
+        <div class="d" id="cmpBeforeDim">—</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box">
+        <div class="tag">After · GIF</div>
+        <div class="v" id="cmpAfterSize">—</div>
+        <div class="d" id="cmpAfterDim">—</div>
+      </div>
+    </div>
+    <div class="savings" id="savings"></div>
+
+    <div class="btn-row">
+      <button class="btn big" id="downloadBtn">⬇ Download GIF</button>
+      <button class="btn ghost big" id="restartBtn">Convert another</button>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-name">Made by Eric Wang</div>
+  Runs 100% in your browser · No files ever leave your device<br>
+  Powered by <code>ffmpeg.wasm</code> · First load ~25 MB, then cached · © 2026
+</footer>
+
+<script type="module">
+import { FFmpeg } from "https://esm.sh/@ffmpeg/ffmpeg@0.12.10";
+import { toBlobURL, fetchFile } from "https://esm.sh/@ffmpeg/util@0.12.1";
+
+const $ = id => document.getElementById(id);
+const CORE = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
+const FFM = "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm";
+const MAX_BYTES = 200 * 1024 * 1024;
+
+let ffmpeg = null, ffmpegLoaded = false;
+let ffmpegLog = [];
+let srcFile = null, srcW = 0, srcH = 0, srcDuration = 0;
+let settings = { fps: 12, speed: 1, width: 480 };
+let gifBlob = null, gifW = 0, gifH = 0;
+
+/* ---------- helpers ---------- */
+const fmtSize = b => b < 1024*1024 ? (b/1024).toFixed(0)+" KB" : (b/1024/1024).toFixed(1)+" MB";
+const fmtDur  = s => { const m=Math.floor(s/60), x=Math.round(s%60); return `${m}:${String(x).padStart(2,"0")}`; };
+function showErr(m){ $("errMsg").textContent=m; $("err").classList.remove("hidden"); }
+function hideErr(){ $("err").classList.add("hidden"); }
+function setStep(n){
+  ["s1","s2","s3","s4"].forEach((id,i)=>{
+    const e=$(id); e.className="step";
+    if(i<n) e.classList.add("done");
+    if(i===n) e.classList.add("active");
+    const w=$("sw"+(i+1)); w.className="step-wrap";
+    if(i<n) w.classList.add("done");
+    if(i===n) w.classList.add("active");
+  });
+}
+
+/* ---------- 1. file selection ---------- */
+const drop = $("drop"), fileInput = $("file");
+drop.addEventListener("click", ()=>fileInput.click());
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+drop.addEventListener("drop",e=>{ if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener("change",e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+$("changeBtn").addEventListener("click", resetToUpload);
+$("restartBtn").addEventListener("click", resetToUpload);
+
+function resetToUpload(){
+  srcFile=null; gifBlob=null; fileInput.value="";
+  $("card-source").classList.add("hidden");
+  $("card-settings").classList.add("hidden");
+  $("card-progress").classList.add("hidden");
+  $("card-result").classList.add("hidden");
+  $("card-upload").classList.remove("hidden");
+  hideErr(); setStep(0);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function handleFile(file){
+  hideErr();
+  if(!file.type.startsWith("video/")){ showErr("Not a video file. Please select MP4, MOV, WebM, or similar."); return; }
+  if(file.size > MAX_BYTES){ showErr(`File too large (${fmtSize(file.size)}). Please select a video under 200 MB.`); return; }
+  srcFile = file;
+
+  const url = URL.createObjectURL(file);
+  const video = document.createElement("video");
+  video.preload = "metadata"; video.muted = true; video.src = url;
+
+  video.addEventListener("loadedmetadata", ()=>{
+    srcW = video.videoWidth; srcH = video.videoHeight; srcDuration = video.duration;
+    $("srcName").textContent = file.name;
+    $("srcSize").textContent = fmtSize(file.size);
+    $("srcDim").textContent  = `${srcW} × ${srcH}`;
+    $("srcDur").textContent  = fmtDur(srcDuration);
+    video.currentTime = Math.min(0.1, srcDuration/2); // grab a frame
+  });
+  video.addEventListener("seeked", ()=>{
+    const c = document.createElement("canvas");
+    c.width = srcW; c.height = srcH;
+    c.getContext("2d").drawImage(video,0,0);
+    $("srcFrame").innerHTML = `<img src="${c.toDataURL("image/jpeg",0.85)}" alt="first frame">`;
+    URL.revokeObjectURL(url);
+  }, { once:true });
+  video.addEventListener("error", ()=>{ showErr("Could not read this video. Format may not be supported — try another file."); });
+
+  $("card-upload").classList.add("hidden");
+  $("card-source").classList.remove("hidden");
+  $("card-settings").classList.remove("hidden");
+  setStep(1);
+}
+
+/* ---------- option pickers ---------- */
+function wirePicker(containerId, attr, key, cast){
+  $(containerId).addEventListener("click", e=>{
+    const opt = e.target.closest(".opt"); if(!opt) return;
+    [...$(containerId).children].forEach(c=>c.classList.remove("sel"));
+    opt.classList.add("sel");
+    settings[key] = cast(opt.dataset[attr]);
+  });
+}
+wirePicker("fpsOpts","fps","fps",Number);
+wirePicker("speedOpts","speed","speed",Number);
+wirePicker("sizeOpts","w","width",Number);
+
+/* ---------- 2. convert ---------- */
+$("convertBtn").addEventListener("click", convert);
+
+async function ensureFFmpeg(){
+  if(ffmpegLoaded) return;
+  $("progLabel").textContent = "Loading converter…";
+  $("progSub").textContent = "First-time setup: downloading converter core (~25 MB) — cached after this.";
+  $("progBar").style.width = "8%"; $("progPct").textContent = "…";
+  ffmpeg = new FFmpeg();
+  ffmpeg.on("log", ({ message })=>{ ffmpegLog.push(message); if(ffmpegLog.length>200) ffmpegLog.shift(); console.log("[ffmpeg]", message); });
+  ffmpeg.on("progress", ({ progress })=>{
+    const p = Math.max(0, Math.min(100, Math.round(progress*100)));
+    $("progBar").style.width = p+"%"; $("progPct").textContent = p+"%";
+  });
+  // ffmpeg.wasm 內部要 new Worker()，Worker script 必須同源；CDN 跨來源會被擋。
+  // 用同源 blob worker 去 import CDN 上的真正 worker（相對依賴會解析回 CDN）。
+  const classWorkerURL = URL.createObjectURL(
+    new Blob([`import "${FFM}/worker.js";`], { type: "text/javascript" })
+  );
+  // core 用 unpkg 原始 ESM 檔（非 esm.sh 轉譯版！esm.sh 會把 node 模組改寫成
+  // unenv polyfill，跑起來會丟「module.require is not implemented」）。
+  // 且 coreURL 直傳、不 blob 化：module worker 用 import() 載入，需保留 import.meta.url
+  // 指向 unpkg 才能正確解析。wasm 是純 binary、無 import，blob 化沒問題。
+  await ffmpeg.load({
+    classWorkerURL,
+    coreURL: `${CORE}/ffmpeg-core.js`,
+    wasmURL: await toBlobURL(`${CORE}/ffmpeg-core.wasm`, "application/wasm"),
+  });
+  ffmpegLoaded = true;
+}
+
+async function convert(){
+  hideErr();
+  // file:// 下跨來源 module/worker/wasm 會被瀏覽器擋掉，且常無聲卡在 Loading。
+  // 提早攔下並給明確指引，不要讓使用者乾等。
+  if(location.protocol === "file:"){
+    showErr("Open this page via a local server, not by double-clicking the file. Run: python3 -m http.server 8000 then visit http://localhost:8000 — the converter cannot load from file://.");
+    return;
+  }
+  $("card-settings").classList.add("hidden");
+  $("card-source").classList.add("hidden");
+  $("card-progress").classList.remove("hidden");
+  $("progLabel").textContent = "Converting…";
+  $("progBar").style.width="0%"; $("progPct").textContent="0%";
+  setStep(2);
+  window.scrollTo({top:0,behavior:"smooth"});
+
+  try{
+    await ensureFFmpeg();
+    $("progLabel").textContent = "Converting…";
+    $("progSub").textContent = "Longer videos take more time — hang tight.";
+
+    ffmpegLog = [];
+    const inName = "input", outName = "out.gif";
+    await ffmpeg.writeFile(inName, await fetchFile(srcFile));
+
+    const pts = (1/settings.speed).toFixed(4);
+    const scale = settings.width>0 ? `scale=${settings.width}:-1:flags=lanczos` : `scale=trunc(iw/2)*2:-1:flags=lanczos`;
+    const filterComplex = `[0:v]setpts=${pts}*PTS,fps=${settings.fps},${scale},split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse[out]`;
+
+    await ffmpeg.exec(["-i", inName, "-filter_complex", filterComplex, "-map", "[out]", "-loop", "0", outName]);
+
+    const data = await ffmpeg.readFile(outName);
+    gifBlob = new Blob([data.buffer], { type:"image/gif" });
+    await ffmpeg.deleteFile(inName); await ffmpeg.deleteFile(outName);
+    showResult();
+  }catch(err){
+    console.error("convert() error:", err);
+    console.error("last ffmpeg log lines:\n" + ffmpegLog.slice(-25).join("\n"));
+    $("card-progress").classList.add("hidden");
+    $("card-source").classList.remove("hidden");
+    $("card-settings").classList.remove("hidden");
+    setStep(1);
+    const errStr = (err && (err.message || err.name)) || String(err);
+    const lastLines = ffmpegLog.slice(-3).join(" · ");
+    const reason = [errStr, lastLines].filter(Boolean).join(" | ") || "unknown error";
+    showErr("Conversion failed: " + reason + " — try a lower resolution or fewer fps.");
+  }
+}
+
+/* ---------- 3. result ---------- */
+function showResult(){
+  const url = URL.createObjectURL(gifBlob);
+  const img = new Image();
+  img.onload = ()=>{
+    gifW = img.naturalWidth; gifH = img.naturalHeight;
+    $("cmpAfterDim").textContent = `${gifW} × ${gifH}`;
+  };
+  img.src = url;
+  $("resultGif").innerHTML = `<img src="${url}" alt="result gif">`;
+
+  $("cmpBeforeSize").textContent = fmtSize(srcFile.size);
+  $("cmpBeforeDim").textContent  = `${srcW} × ${srcH}`;
+  $("cmpAfterSize").textContent  = fmtSize(gifBlob.size);
+
+  const ratio = srcFile.size / gifBlob.size;
+  if(gifBlob.size < srcFile.size){
+    $("savings").style.color = "var(--good)";
+    $("savings").textContent = `GIF is ${(100 - gifBlob.size/srcFile.size*100).toFixed(0)}% smaller than the original (${ratio.toFixed(1)}× smaller).`;
+  }else{
+    $("savings").style.color = "var(--muted)";
+    $("savings").textContent = `GIF is larger than the source video — normal for GIF format. Try lower fps or size.`;
+  }
+
+  $("card-progress").classList.add("hidden");
+  $("card-result").classList.remove("hidden");
+  setStep(4);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- 4. download (File System Access API + fallback) ---------- */
+$("downloadBtn").addEventListener("click", async ()=>{
+  if(!gifBlob) return;
+  const fileName = (srcFile.name.replace(/\.[^.]+$/,"") || "converted") + ".gif";
+
+  if(window.showSaveFilePicker){
+    // 用了 File System Access picker 就走完它；不要 fall through 到 <a download>，
+    // 否則開了「下載前詢問位置」的瀏覽器會再彈第二次目的地視窗。
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: fileName,
+        types:[{ description:"GIF image", accept:{ "image/gif":[".gif"] } }]
+      });
+      const w = await handle.createWritable();
+      await w.write(gifBlob); await w.close();
+    }catch(e){ if(e.name !== "AbortError") showErr("Save failed: " + (e.message||e.name)); }
+    return;
+  }
+  // fallback: standard download (only when the picker API is unavailable)
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(gifBlob);
+  a.download = fileName; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+});
+
+setStep(0);
+</script>
+</body>
+</html>
