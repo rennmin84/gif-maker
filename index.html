@@ -30,11 +30,14 @@
       var(--paper);
     color:var(--ink);
     min-height:100vh;
-    padding:32px 20px 80px;
+    padding:32px 20px 0;
     -webkit-font-smoothing:antialiased;
+    /* flex column 讓 footer 用 margin-top:auto 永遠貼齊視窗底部 */
+    display:flex;
+    flex-direction:column;
   }
 
-  .wrap{max-width:760px;margin:0 auto}
+  .wrap{max-width:760px;width:100%;margin:0 auto}
 
   /* ---------- header ---------- */
   header{display:flex;align-items:center;gap:14px;margin-bottom:6px}
@@ -188,8 +191,9 @@
   }
   .err.hidden{display:none}
 
-  /* footer 移出 .wrap，用負邊距抵銷 body 左右 padding(20px)，讓上方橫線貫穿整個頁面寬度 */
-  footer{text-align:center;color:var(--muted);font-size:12px;margin:48px -20px 0;padding:24px 20px 0;border-top:1px solid var(--line);line-height:1.9}
+  /* footer 移出 .wrap：負邊距抵銷 body 左右 padding(20px) 讓橫線貫穿頁面寬度；
+     margin-top:auto 在 flex column 下把 footer 推到視窗底部（內容短時也貼底） */
+  footer{text-align:center;color:var(--muted);font-size:12px;margin:auto -20px 0;padding:24px 20px 24px;border-top:1px solid var(--line);line-height:1.9}
   footer code{font-family:'DM Mono',monospace;background:var(--paper-2);padding:2px 6px;border-radius:5px}
   footer .footer-name{font-weight:700;color:var(--ink);font-size:13px}
 </style>
